@@ -1,87 +1,52 @@
 :root {
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
-  --space-7: 32px;
-  --space-8: 40px;
-  --space-9: 48px;
-  --space-10: 64px;
+  /* 默认主题变量 (warm) — 通过 App.vue 的 JS 动态覆盖 */
+  --bg: #F5F2EA;
+  --panel-bg: rgba(255,255,255,0.55);
+  --wall: #8B7355;
+  --wall-glow: #E07B39;
+  --player: #E07B39;
+  --player-glow: #FF8C42;
+  --accent: #E07B39;
+  --text: #2D241D;
+  --text-sec: #8B7355;
 
-  --radius-xs: 4px;
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 18px;
-  --radius-2xl: 24px;
-  --radius-full: 9999px;
+  /* 间距 */
+  --g-1: 4px;
+  --g-2: 8px;
+  --g-3: 12px;
+  --g-4: 16px;
+  --g-5: 20px;
+  --g-6: 24px;
 
-  --blur-xs: 8px;
-  --blur-sm: 12px;
-  --blur-md: 16px;
-  --blur-lg: 20px;
-  --blur-xl: 24px;
+  /* 圆角 */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-full: 9999px;
 
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.08);
-  --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.1);
-  --shadow-2xl: 0 20px 40px rgba(0, 0, 0, 0.12);
+  /* 字体 */
+  --fs-xs: 10px;
+  --fs-sm: 12px;
+  --fs-base: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 22px;
 
-  --font-size-xs: 11px;
-  --font-size-sm: 12px;
-  --font-size-base: 14px;
-  --font-size-lg: 16px;
-  --font-size-xl: 18px;
-  --font-size-2xl: 22px;
-  --font-size-3xl: 28px;
-  --font-size-4xl: 34px;
-
-  --font-weight-normal: 400;
-  --font-weight-medium: 500;
-  --font-weight-semibold: 600;
-  --font-weight-bold: 700;
-
-  --line-height-tight: 1.25;
-  --line-height-normal: 1.4;
-  --line-height-relaxed: 1.6;
-
-  --transition-fast: 120ms ease;
-  --transition-normal: 180ms ease;
-  --transition-slow: 250ms ease;
-
-  --panel-width: 300px;
-  --title-bar-height: 36px;
-  --button-height: 36px;
-  --input-height: 32px;
-
-  --theme-background: #F5F2EA;
-  --theme-panel-background: rgba(255, 255, 255, 0.6);
-  --theme-wall-color: #4A3B2A;
-  --theme-wall-glow: #E07B39;
-  --theme-player-color: #5C4A3A;
-  --theme-player-glow: #FF8C42;
-  --theme-accent-color: #E07B39;
-  --theme-accent-light: rgba(224, 123, 57, 0.15);
-  --theme-primary-text: #2D241D;
-  --theme-secondary-text: #7A6550;
-  --theme-border-color: rgba(0, 0, 0, 0.06);
-  --theme-entry-glow: rgba(100, 200, 100, 0.5);
-  --theme-exit-glow: rgba(255, 100, 100, 0.5);
-
-  --glass-bg: rgba(255, 255, 255, 0.4);
-  --glass-border: rgba(255, 255, 255, 0.15);
+  /* 阴影 */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.1);
 }
 
-html {
-  font-size: var(--font-size-base);
-}
-
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a1a2e;
+    --panel-bg: rgba(30,30,50,0.7);
+    --wall: #a0a0c0;
+    --wall-glow: #6366f1;
+    --player: #818cf8;
+    --player-glow: #a5b4fc;
+    --accent: #818cf8;
+    --text: #e2e8f0;
+    --text-sec: #94a3b8;
+  }
 }

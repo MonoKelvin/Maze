@@ -1,92 +1,28 @@
-/**
- * 碰撞检测器 - 负责处理角色移动的碰撞检测
- * 使用面向对象设计
- */
+import { Direction } from '@/types/maze';
+import { W_TOP, W_RIGHT, W_BOTTOM, W_LEFT } from './mazeWalls';
 
-import { Cell } from '@/types/maze';
-import { MovementDirection } from '@/types/player';
-
-/**
- * 玩家网格位置
- */
-export interface PlayerGridPosition {
-  row: number;
-  col: number;
-}
-
-/**
- * 碰撞检测器
- */
+/** 直接从位掩码检测碰撞 */
 export class CollisionDetector {
-  /**
-   * 检测移动方向是否有墙壁阻挡
-   */
-  canMove(
-    playerGrid: PlayerGridPosition,
-    cell: Cell,
-    direction: MovementDirection
-  ): boolean {
-    switch (direction) {
-      case MovementDirection.UP:
-        return !cell.walls.top;
-      case MovementDirection.DOWN:
-        return !cell.walls.bottom;
-      case MovementDirection.LEFT:
-        return !cell.walls.left;
-      case MovementDirection.RIGHT:
-        return !cell.walls.right;
-      default:
-        return false;
+  static canMove(walls: Uint8Array, row: number, col: number, C: number, dir: Direction): boolean {
+    const w = walls[row * C + col];
+    switch (dir) {
+      case Direction.UP: return !(w & W_TOP);
+      case Direction.DOWN: return !(w & W_BOTTOM);
+      case Direction.LEFT: return !(w & W_LEFT);
+      case Direction.RIGHT: return !(w & W_RIGHT);
     }
   }
 
-  /**
-   * 检测玩家是否到达目标单元格
-   */
-  reachedTarget(
-    playerGrid: PlayerGridPosition,
-    targetGrid: PlayerGridPosition
-  ): boolean {
-    return (
-      playerGrid.row === targetGrid.row &&
-      playerGrid.col === targetGrid.col
-    );
-  }
-
-  /**
-   * 获取移动后的网格坐标
-   */
-  getTargetGrid(
-    playerGrid: PlayerGridPosition,
-    direction: MovementDirection
-  ): PlayerGridPosition {
-    switch (direction) {
-      case MovementDirection.UP:
-        return { row: playerGrid.row - 1, col: playerGrid.col };
-      case MovementDirection.DOWN:
-        return { row: playerGrid.row + 1, col: playerGrid.col };
-      case MovementDirection.LEFT:
-        return { row: playerGrid.row, col: playerGrid.col - 1 };
-      case MovementDirection.RIGHT:
-        return { row: playerGrid.row, col: playerGrid.col + 1 };
-      default:
-        return playerGrid;
+  static target(row: number, col: number, dir: Direction) {
+    switch (dir) {
+      case Direction.UP: return { row: row - 1, col };
+      case Direction.DOWN: return { row: row + 1, col };
+      case Direction.LEFT: return { row, col: col - 1 };
+      case Direction.RIGHT: return { row, col: col + 1 };
     }
   }
 
-  /**
-   * 检测边界
-   */
-  isInsideBounds(
-    grid: Cell[][],
-    row: number,
-    col: number
-  ): boolean {
-    return (
-      row >= 0 &&
-      row < grid.length &&
-      col >= 0 &&
-      col < grid[0].length
-    );
+  static inBounds(row: number, col: number, rows: number, cols: number) {
+    return row >= 0 && row < rows && col >= 0 && col < cols;
   }
 }

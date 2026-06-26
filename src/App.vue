@@ -1,41 +1,41 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
-import { useThemeStore } from './store/settingsStore';
-import { THEMES } from './constants/themes';
-import GameView from './views/GameView.vue';
+import { useSettingsStore } from '@/store/settingsStore';
+import GameView from '@/views/GameView.vue';
 
-const themeStore = useThemeStore();
+const settings = useSettingsStore();
+
+// 主题应用
+function applyTheme() {
+  const t = settings.themes[settings.theme];
+  if (!t) return;
+  const root = document.documentElement;
+  root.style.setProperty('--bg', t.background);
+  root.style.setProperty('--panel-bg', t.panelBg);
+  root.style.setProperty('--wall', t.wallColor);
+  root.style.setProperty('--wall-glow', t.wallGlow);
+  root.style.setProperty('--player', t.playerColor);
+  root.style.setProperty('--player-glow', t.playerGlow);
+  root.style.setProperty('--accent', t.accent);
+  root.style.setProperty('--text-pri', t.text);
+  root.style.setProperty('--text-sec', t.textSecondary);
+}
 
 onMounted(() => {
-  themeStore.loadSettings();
+  settings.load();
+  applyTheme();
 });
-
-const currentThemeStyle = () => {
-  const theme = THEMES[themeStore.currentTheme];
-  return theme ? theme.background : '#F5F2EA';
-};
 </script>
 
 <template>
-  <div id="app" :style="{ backgroundColor: currentThemeStyle() }">
+  <div id="app" :style="{ background: 'var(--bg)' }">
     <GameView />
   </div>
 </template>
 
 <style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
-}
-
-#app {
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body, #app { width: 100%; height: 100%; overflow: hidden; }
+body { font-family: 'Inter', -apple-system, 'SF Pro', sans-serif; -webkit-font-smoothing: antialiased; }
+button { font-family: inherit; cursor: pointer; }
 </style>

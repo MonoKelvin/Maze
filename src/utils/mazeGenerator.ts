@@ -1,267 +1,89 @@
 /**
- * 迷宫生成器 - 基于回溯算法的迷宫生成
- * 使用位掩码表示墙壁状态，支持种子化随机
- * 支持多种算法切换，可扩展接口设计
+ * 迷宫生成器 — 位掩码 Uint8Array，支持异步 + 取消 + 出入口配置
+ * 尺寸范围 1~1000
  */
 
-import type { Cell, Maze, MazeParams } from '@/types/maze';
+import type { SimpleMaze } from '@/types/maze';
 
-/** 方向定义 */
-type Direction = 'N' | 'E' | 'S' | 'W';
+const W = { T: 1, R: 2, B: 4, L: 8, V: 16 };
 
-/** 方向偏移量 */
-const OFFSET: Record<Direction, [number, number]> = {
-    N: [0, -1],
-    E: [1, 0],
-    S: [0, 1],
-    W: [-1, 0]
-};
+export interface GenToken { aborted: boolean }
 
-/** 方向列表 */
-const DIRS: Direction[] = ['N', 'E', 'S', 'W'];
-
-/** 迷宫生成算法接口 */
-export interface IMazeGenerator {
-    /**
-     * 生成迷宫
-     * @param params 迷宫参数
-     * @returns 生成的迷宫数据
-     */
-    generate(params: MazeParams): Maze;
-
-    /**
-     * 获取算法名称
-     */
-    getName(): string;
-
-    /**
-     * 获取算法描述
-     */
-    getDescription(): string;
+function pickEntryExit(rows: number, cols: number) {
+  const entry = { row: Math.floor(Math.random() * rows), col: 0 };
+  let exit = { row: Math.floor(Math.random() * rows), col: cols - 1 };
+  if (entry.row === exit.row) exit = { ...exit, row: (exit.row + 1) % rows };
+  return { entry, exit };
 }
 
-/** 默认迷宫生成器（递归回溯算法） */
-class RecursiveBacktrackerGenerator implements IMazeGenerator {
-    getName(): string {
-        return 'recursive-backtracker';
-    }
-
-    getDescription(): string {
-        return '使用递归回溯算法生成完美迷宫，保证迷宫所有单元格连通，无环';
-    }
-
-    generate(params: MazeParams): Maze {
-        const { rows, cols, seed, entry, exit } = params;
-
-        // 参数验证
-        const validRows = Math.max(1, Math.min(100, rows));
-        const validCols = Math.max(1, Math.min(100, cols));
-
-        // 创建网格
-        const grid = createGrid(validRows, validCols);
-
-        // 创建随机数生成器
-        const rng = new SeededRNG(seed);
-
-        // 生成迷宫
-        carveMazeDFS(grid, validRows, validCols, rng);
-
-        // 确定入口和出口位置
-        const entryRow = entry?.gridPos?.row ?? 0;
-        const entryCol = entry?.gridPos?.col ?? 0;
-        const exitRow = exit?.gridPos?.row ?? (validRows - 1);
-        const exitCol = exit?.gridPos?.col ?? (validCols - 1);
-
-        // 验证位置范围
-        const validEntryRow = Math.max(0, Math.min(validRows - 1, entryRow));
-        const validEntryCol = Math.max(0, Math.min(validCols - 1, entryCol));
-        const validExitRow = Math.max(0, Math.min(validRows - 1, exitRow));
-        const validExitCol = Math.max(0, Math.min(validCols - 1, exitCol));
-
-        // 标记入口和出口
-        grid[validEntryRow][validEntryCol].entry = true;
-        grid[validExitRow][validExitCol].exit = true;
-
-        return {
-            grid,
-            entry: { row: validEntryRow, col: validEntryCol },
-            exit: { row: validExitRow, col: validExitCol },
-            params: {
-                ...params,
-                rows: validRows,
-                cols: validCols
-            }
-        };
-    }
+export function generateSync(rows: number, cols: number, token?: GenToken): SimpleMaze {
+  const R = clamp(rows), C = clamp(cols);
+  const walls = new Uint8Array(R * C);
+  walls.fill(W.T | W.R | W.B | W.L);
+  walls[0] |= W.V;
+  const stack: number[] = [0];
+  while (stack.length) {
+    if (token?.aborted) return null as any;
+    const cur = stack[stack.length - 1];
+    const r = Math.floor(cur / C), c = cur % C;
+    const nbrs: number[] = [];
+    if (r > 0)        { const n = cur - C; if (!(walls[n] & W.V)) nbrs.push(n); }
+    if (r < R - 1)    { const n = cur + C; if (!(walls[n] & W.V)) nbrs.push(n); }
+    if (c > 0)        { const n = cur - 1; if (!(walls[n] & W.V)) nbrs.push(n); }
+    if (c < C - 1)    { const n = cur + 1; if (!(walls[n] & W.V)) nbrs.push(n); }
+    if (nbrs.length) {
+      const n = nbrs[Math.random() * nbrs.length | 0];
+      const nr = Math.floor(n / C), nc = n % C;
+      if (nr === r - 1) { walls[cur] &= ~W.T; walls[n] &= ~W.B; }
+      else if (nr === r + 1) { walls[cur] &= ~W.B; walls[n] &= ~W.T; }
+      else if (nc === c - 1) { walls[cur] &= ~W.L; walls[n] &= ~W.R; }
+      else if (nc === c + 1) { walls[cur] &= ~W.R; walls[n] &= ~W.L; }
+      walls[n] |= W.V; stack.push(n);
+    } else stack.pop();
+  }
+  const ee = pickEntryExit(R, C);
+  return { walls, rows: R, cols: C, entry: ee.entry, exit: ee.exit };
 }
 
-/**
- * 简单的可种子化伪随机数生成器（Mulberry32）
- */
-class SeededRNG {
-    private state: number;
-
-    constructor(seed?: number) {
-        this.state = (seed ?? Date.now() ^ Math.floor(Math.random() * 0xffffffff)) >>> 0;
-        if (this.state === 0) this.state = 0x9e3779b9;
+export function generateAsync(
+  rows: number, cols: number,
+  onProgress?: (pct: number) => void,
+  token?: GenToken
+): Promise<SimpleMaze> {
+  return new Promise(resolve => {
+    const R = clamp(rows), C = clamp(cols), total = R * C;
+    const walls = new Uint8Array(total);
+    walls.fill(W.T | W.R | W.B | W.L);
+    walls[0] |= W.V;
+    const stack: number[] = [0];
+    let visited = 1;
+    function tick() {
+      if (token?.aborted) { resolve(null as any); return; }
+      const t0 = performance.now();
+      while (stack.length && performance.now() - t0 < 12) {
+        const cur = stack[stack.length - 1];
+        const r = Math.floor(cur / C), c = cur % C;
+        const nbrs: number[] = [];
+        if (r > 0)        { const n = cur - C; if (!(walls[n] & W.V)) nbrs.push(n); }
+        if (r < R - 1)    { const n = cur + C; if (!(walls[n] & W.V)) nbrs.push(n); }
+        if (c > 0)        { const n = cur - 1; if (!(walls[n] & W.V)) nbrs.push(n); }
+        if (c < C - 1)    { const n = cur + 1; if (!(walls[n] & W.V)) nbrs.push(n); }
+        if (nbrs.length) {
+          const n = nbrs[Math.random() * nbrs.length | 0];
+          const nr = Math.floor(n / C), nc = n % C;
+          if (nr === r - 1) { walls[cur] &= ~W.T; walls[n] &= ~W.B; }
+          else if (nr === r + 1) { walls[cur] &= ~W.B; walls[n] &= ~W.T; }
+          else if (nc === c - 1) { walls[cur] &= ~W.L; walls[n] &= ~W.R; }
+          else if (nc === c + 1) { walls[cur] &= ~W.R; walls[n] &= ~W.L; }
+          walls[n] |= W.V; stack.push(n); visited++;
+        } else stack.pop();
+      }
+      onProgress?.(Math.min(Math.round(visited / total * 100), 100));
+      if (stack.length) setTimeout(tick, 0);
+      else { const ee = pickEntryExit(R, C); resolve({ walls, rows: R, cols: C, entry: ee.entry, exit: ee.exit }); }
     }
-
-    /** 0~1 */
-    next(): number {
-        this.state = (this.state + 0x6d2b79f5) >>> 0;
-        let t = this.state;
-        t = Math.imul(t ^ (t >>> 15), t | 1);
-        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    }
-
-    /** 0~n-1 */
-    int(n: number): number {
-        return Math.floor(this.next() * n);
-    }
-
-    /** 从数组随机挑选 */
-    pick<T>(arr: readonly T[]): T {
-        return arr[this.int(arr.length)];
-    }
+    tick();
+  });
 }
 
-/**
- * 创建空的网格（所有墙壁完整）
- */
-function createGrid(rows: number, cols: number): Cell[][] {
-    const grid: Cell[][] = [];
-    for (let r = 0; r < rows; r++) {
-        const row: Cell[] = [];
-        for (let c = 0; c < cols; c++) {
-            row.push({
-                row: r,
-                col: c,
-                walls: { top: true, right: true, bottom: true, left: true },
-                visited: false,
-                inValidArea: true
-            });
-        }
-        grid.push(row);
-    }
-    return grid;
-}
-
-/**
- * 获取未访问的邻居单元格
- */
-function getUnvisitedNeighbors(
-    grid: Cell[][],
-    row: number,
-    col: number,
-    rows: number,
-    cols: number
-): Cell[] {
-    const neighbors: Cell[] = [];
-
-    for (const d of DIRS) {
-        const [dc, dr] = OFFSET[d];
-        const nr = row + dr;
-        const nc = col + dc;
-
-        if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) continue;
-        if (grid[nr][nc].visited) continue;
-
-        neighbors.push(grid[nr][nc]);
-    }
-
-    return neighbors;
-}
-
-/**
- * 移除两个相邻单元格之间的墙壁
- */
-function removeWall(_grid: Cell[][], from: Cell, to: Cell): void {
-    const rowDiff = to.row - from.row;
-    const colDiff = to.col - from.col;
-
-    if (rowDiff === -1) { // 北
-        from.walls.top = false;
-        to.walls.bottom = false;
-    } else if (rowDiff === 1) { // 南
-        from.walls.bottom = false;
-        to.walls.top = false;
-    } else if (colDiff === -1) { // 西
-        from.walls.left = false;
-        to.walls.right = false;
-    } else if (colDiff === 1) { // 东
-        from.walls.right = false;
-        to.walls.left = false;
-    }
-}
-
-/**
- * 使用递归回溯算法（DFS）生成迷宫
- */
-function carveMazeDFS(grid: Cell[][], rows: number, cols: number, rng: SeededRNG): void {
-    const stack: Cell[] = [];
-    const startCell = grid[0][0];
-
-    startCell.visited = true;
-    stack.push(startCell);
-
-    while (stack.length > 0) {
-        const current = stack[stack.length - 1];
-        const neighbors = getUnvisitedNeighbors(grid, current.row, current.col, rows, cols);
-
-        if (neighbors.length > 0) {
-            // 随机选择一个邻居
-            const next = rng.pick(neighbors);
-
-            // 移除墙壁
-            removeWall(grid, current, next);
-
-            // 标记并入栈
-            next.visited = true;
-            stack.push(next);
-        } else {
-            // 回溯
-            stack.pop();
-        }
-    }
-}
-
-/** 迷宫生成器工厂 */
-export class MazeGeneratorFactory {
-    private static generators: Map<string, IMazeGenerator> = new Map([
-        ['recursive-backtracker', new RecursiveBacktrackerGenerator()]
-    ]);
-
-    /**
-     * 注册迷宫生成器
-     */
-    static register(name: string, generator: IMazeGenerator): void {
-        this.generators.set(name, generator);
-    }
-
-    /**
-     * 获取迷宫生成器
-     */
-    static get(name: string): IMazeGenerator | undefined {
-        return this.generators.get(name);
-    }
-
-    /**
-     * 获取所有可用的生成器
-     */
-    static getAll(): IMazeGenerator[] {
-        return Array.from(this.generators.values());
-    }
-}
-
-/**
- * 生成迷宫主函数（默认使用递归回溯算法）
- */
-export function generateMaze(params: MazeParams): Maze {
-    // 使用默认算法
-    const generator = MazeGeneratorFactory.get('recursive-backtracker');
-    if (!generator) {
-        throw new Error('Default maze generator not found');
-    }
-    return generator.generate(params);
-}
+function clamp(v: number) { return Math.max(1, Math.min(1000, Math.round(v))); }

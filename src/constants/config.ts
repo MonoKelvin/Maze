@@ -27,5 +27,7 @@ export const CELL_SIZE_CONFIG = {
 // 角色配置
 export const PLAYER_CONFIG = {
   sizeRatio: 0.4,
-  defaultSpeed: 3
+  speed: 3,
+  color: '#ffffff',
+  glowColor: '#818cf8'
 } as const;

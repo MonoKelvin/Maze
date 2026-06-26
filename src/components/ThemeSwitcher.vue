@@ -1,100 +1,49 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { useSettingsStore } from '@/store/settingsStore';
 import type { ThemeName } from '@/types/theme';
 
-const settingsStore = useSettingsStore();
+const emit = defineEmits<{ change: [t: ThemeName] }>();
+const settings = useSettingsStore();
 
-const themes: Array<{ name: ThemeName; label: string; color: string }> = [
-  { name: 'warm', label: '暖色', color: '#F5F2EA' },
-  { name: 'ocean', label: '海洋', color: '#F0F9FF' },
-  { name: 'forest', label: '森林', color: '#F0FDF4' },
-  { name: 'purple', label: '紫色', color: '#FAF5FF' }
+const themes: { name: ThemeName; label: string; color: string }[] = [
+  { name: 'warm', label: '暖色', color: '#E07B39' },
+  { name: 'ocean', label: '海洋', color: '#0EA5E9' },
+  { name: 'forest', label: '森林', color: '#22C55E' },
+  { name: 'purple', label: '紫色', color: '#A855F7' }
 ];
 
-const currentTheme = computed(() => settingsStore.currentTheme);
-
-const changeTheme = (themeName: ThemeName) => {
-  settingsStore.updateSettings({ theme: themeName });
+const pick = (name: ThemeName) => {
+  settings.setTheme(name);
+  emit('change', name);
 };
 </script>
 
 <template>
   <div class="theme-switcher">
-    <div class="theme-header">
-      <div class="section-dot"></div>
-      <span class="section-title">主题</span>
-    </div>
-    <div class="theme-options">
-      <div
-        v-for="theme in themes"
-        :key="theme.name"
-        class="theme-option"
-        :class="{ active: currentTheme === theme.name }"
-        :style="{ backgroundColor: theme.color }"
-        @click="changeTheme(theme.name)"
-      >
-        <span class="theme-label">{{ theme.label }}</span>
-      </div>
+    <div class="sec-title">主题</div>
+    <div class="options">
+      <button v-for="t in themes" :key="t.name"
+        class="dot"
+        :class="{ active: settings.theme === t.name }"
+        :style="{ background: t.color }"
+        :title="t.label"
+        @click="pick(t.name)"
+      />
     </div>
   </div>
 </template>
 
 <style scoped>
-.theme-switcher {
-  padding: var(--space-4) 0;
-}
-
-.theme-header {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-bottom: var(--space-3);
-}
-
-.section-dot {
-  width: 6px;
-  height: 6px;
-  background: var(--theme-accent-color);
-  border-radius: var(--radius-full);
-}
-
-.section-title {
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-semibold);
-  color: var(--theme-secondary-text);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.theme-options {
-  display: flex;
-  gap: var(--space-2);
-}
-
-.theme-option {
-  width: 52px;
-  height: 52px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.theme-switcher { display: flex; flex-direction: column; gap: 8px; }
+.sec-title { font-size: 10px; font-weight: 600; color: var(--text-sec); text-transform: uppercase; letter-spacing: 1.2px; }
+.options { display: flex; gap: 8px; }
+.dot {
+  width: 28px; height: 28px;
+  border-radius: 50%;
   border: 2px solid transparent;
+  transition: all 0.15s;
+  cursor: pointer;
 }
-
-.theme-option:hover {
-  transform: scale(1.05);
-}
-
-.theme-option.active {
-  border-color: var(--theme-accent-color);
-}
-
-.theme-label {
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
-  color: var(--theme-primary-text);
-}
+.dot:hover { transform: scale(1.15); }
+.dot.active { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,0,0,0.05); }
 </style>
