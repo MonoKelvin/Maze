@@ -1,0 +1,87 @@
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 48px;
+  --space-10: 64px;
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  --blur-xs: 8px;
+  --blur-sm: 12px;
+  --blur-md: 16px;
+  --blur-lg: 20px;
+  --blur-xl: 24px;
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.08);
+  --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.1);
+  --shadow-2xl: 0 20px 40px rgba(0, 0, 0, 0.12);
+
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 22px;
+  --font-size-3xl: 28px;
+  --font-size-4xl: 34px;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.4;
+  --line-height-relaxed: 1.6;
+
+  --transition-fast: 120ms ease;
+  --transition-normal: 180ms ease;
+  --transition-slow: 250ms ease;
+
+  --panel-width: 300px;
+  --title-bar-height: 36px;
+  --button-height: 36px;
+  --input-height: 32px;
+
+  --theme-background: #F5F2EA;
+  --theme-panel-background: rgba(255, 255, 255, 0.6);
+  --theme-wall-color: #4A3B2A;
+  --theme-wall-glow: #E07B39;
+  --theme-player-color: #5C4A3A;
+  --theme-player-glow: #FF8C42;
+  --theme-accent-color: #E07B39;
+  --theme-accent-light: rgba(224, 123, 57, 0.15);
+  --theme-primary-text: #2D241D;
+  --theme-secondary-text: #7A6550;
+  --theme-border-color: rgba(0, 0, 0, 0.06);
+  --theme-entry-glow: rgba(100, 200, 100, 0.5);
+  --theme-exit-glow: rgba(255, 100, 100, 0.5);
+
+  --glass-bg: rgba(255, 255, 255, 0.4);
+  --glass-border: rgba(255, 255, 255, 0.15);
+}
+
+html {
+  font-size: var(--font-size-base);
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
