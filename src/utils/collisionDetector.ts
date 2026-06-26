@@ -1,9 +1,28 @@
+/**
+ * 碰撞检测器 - 负责处理角色移动的碰撞检测
+ * 使用面向对象设计
+ */
+
 import { Cell } from '@/types/maze';
 import { MovementDirection } from '@/types/player';
 
+/**
+ * 玩家网格位置
+ */
+export interface PlayerGridPosition {
+  row: number;
+  col: number;
+}
+
+/**
+ * 碰撞检测器
+ */
 export class CollisionDetector {
-  static canMove(
-    _playerGrid: { row: number; col: number },
+  /**
+   * 检测移动方向是否有墙壁阻挡
+   */
+  canMove(
+    playerGrid: PlayerGridPosition,
     cell: Cell,
     direction: MovementDirection
   ): boolean {
@@ -21,9 +40,12 @@ export class CollisionDetector {
     }
   }
 
-  static reachedTarget(
-    playerGrid: { row: number; col: number },
-    targetGrid: { row: number; col: number }
+  /**
+   * 检测玩家是否到达目标单元格
+   */
+  reachedTarget(
+    playerGrid: PlayerGridPosition,
+    targetGrid: PlayerGridPosition
   ): boolean {
     return (
       playerGrid.row === targetGrid.row &&
@@ -31,10 +53,13 @@ export class CollisionDetector {
     );
   }
 
-  static getTargetGrid(
-    playerGrid: { row: number; col: number },
+  /**
+   * 获取移动后的网格坐标
+   */
+  getTargetGrid(
+    playerGrid: PlayerGridPosition,
     direction: MovementDirection
-  ): { row: number; col: number } {
+  ): PlayerGridPosition {
     switch (direction) {
       case MovementDirection.UP:
         return { row: playerGrid.row - 1, col: playerGrid.col };
@@ -47,5 +72,21 @@ export class CollisionDetector {
       default:
         return playerGrid;
     }
+  }
+
+  /**
+   * 检测边界
+   */
+  isInsideBounds(
+    grid: Cell[][],
+    row: number,
+    col: number
+  ): boolean {
+    return (
+      row >= 0 &&
+      row < grid.length &&
+      col >= 0 &&
+      col < grid[0].length
+    );
   }
 }

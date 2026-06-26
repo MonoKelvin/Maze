@@ -4,20 +4,22 @@ import { useThemeStore } from '@/store/settingsStore';
 import { useMaze } from '@/composables/useMaze';
 import { usePlayer } from '@/composables/usePlayer';
 import { useStatsStore } from '@/store/statsStore';
+import { useStorageStore } from '@/store/storageStore';
 import MazeCanvas from '@/components/MazeCanvas.vue';
 import ControlPanel from '@/components/ControlPanel.vue';
 import ThemeSwitcher from '@/components/ThemeSwitcher.vue';
 import VictoryModal from '@/components/VictoryModal.vue';
 import WindowTitleBar from '@/components/WindowTitleBar.vue';
-import type { CellSize } from '@/types/maze';
+import type { CellSize, Maze } from '@/types/maze';
 import type { Theme } from '@/types/theme';
 
 const themeStore = useThemeStore();
 const mazeStore = useMaze();
 const playerStore = usePlayer();
 const statsStore = useStatsStore();
+const storageStore = useStorageStore();
 
-const maze = ref<any>(null);
+const maze = ref<Maze | null>(null);
 const cellSize = ref<CellSize>({
   width: 40,
   height: 40,
@@ -59,12 +61,13 @@ const handleResize = () => {
 };
 
 onMounted(() => {
-  generateNewGame();
+  initializeGame();
   window.addEventListener('resize', handleResize);
 });
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
+  storageStore.saveToStorage();
 });
 
 watch(() => mazeStore.currentMaze, renderMaze);
@@ -72,6 +75,7 @@ watch(() => mazeStore.currentMaze, renderMaze);
 const handleVictory = () => {
   showVictoryModal.value = true;
   statsStore.stopTimer();
+  storageStore.saveToStorage();
 };
 
 const handleRestart = () => {
@@ -79,19 +83,50 @@ const handleRestart = () => {
   generateNewGame();
 };
 
+const handleCloseModal = () => {
+  showVictoryModal.value = false;
+};
+
+const initializeGame = () => {
+  // 加载设置
+  storageStore.initialize();
+  themeStore.loadSettings();
+
+  // 尝试恢复游戏状态
+  const restoredState = storageStore.restoreGameState();
+  if (restoredState) {
+    // 重新生成迷宫
+    const mazeData = mazeStore.generateMaze();
+    if (mazeData) {
+      maze.value = mazeData;
+      // 设置玩家位置
+      playerStore.setPosition(
+        restoredState.playerGridPos.row,
+        restoredState.playerGridPos.col
+      );
+      // 恢复统计数据
+      statsStore.loadStats({
+        elapsed: storageStore.storageData.stats.elapsed,
+        distance: storageStore.storageData.stats.distance,
+        steps: storageStore.storageData.stats.steps
+      });
+    }
+  } else {
+    // 新游戏
+    generateNewGame();
+  }
+};
+
 const generateNewGame = () => {
   const mazeData = mazeStore.generateMaze();
   if (mazeData) {
+    maze.value = mazeData;
     playerStore.resetPlayer();
     playerStore.setPosition(mazeData.entry.row, mazeData.entry.col);
     statsStore.resetStats();
     statsStore.startTimer();
     statsStore.saveStats();
   }
-};
-
-const handleCloseModal = () => {
-  showVictoryModal.value = false;
 };
 </script>
 

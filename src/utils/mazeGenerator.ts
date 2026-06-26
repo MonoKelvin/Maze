@@ -1,6 +1,7 @@
 /**
  * 迷宫生成器 - 基于回溯算法的迷宫生成
  * 使用位掩码表示墙壁状态，支持种子化随机
+ * 支持多种算法切换，可扩展接口设计
  */
 
 import type { Cell, Maze, MazeParams } from '@/types/maze';
@@ -18,6 +19,81 @@ const OFFSET: Record<Direction, [number, number]> = {
 
 /** 方向列表 */
 const DIRS: Direction[] = ['N', 'E', 'S', 'W'];
+
+/** 迷宫生成算法接口 */
+export interface IMazeGenerator {
+    /**
+     * 生成迷宫
+     * @param params 迷宫参数
+     * @returns 生成的迷宫数据
+     */
+    generate(params: MazeParams): Maze;
+
+    /**
+     * 获取算法名称
+     */
+    getName(): string;
+
+    /**
+     * 获取算法描述
+     */
+    getDescription(): string;
+}
+
+/** 默认迷宫生成器（递归回溯算法） */
+class RecursiveBacktrackerGenerator implements IMazeGenerator {
+    getName(): string {
+        return 'recursive-backtracker';
+    }
+
+    getDescription(): string {
+        return '使用递归回溯算法生成完美迷宫，保证迷宫所有单元格连通，无环';
+    }
+
+    generate(params: MazeParams): Maze {
+        const { rows, cols, seed, entry, exit } = params;
+
+        // 参数验证
+        const validRows = Math.max(1, Math.min(100, rows));
+        const validCols = Math.max(1, Math.min(100, cols));
+
+        // 创建网格
+        const grid = createGrid(validRows, validCols);
+
+        // 创建随机数生成器
+        const rng = new SeededRNG(seed);
+
+        // 生成迷宫
+        carveMazeDFS(grid, validRows, validCols, rng);
+
+        // 确定入口和出口位置
+        const entryRow = entry?.gridPos?.row ?? 0;
+        const entryCol = entry?.gridPos?.col ?? 0;
+        const exitRow = exit?.gridPos?.row ?? (validRows - 1);
+        const exitCol = exit?.gridPos?.col ?? (validCols - 1);
+
+        // 验证位置范围
+        const validEntryRow = Math.max(0, Math.min(validRows - 1, entryRow));
+        const validEntryCol = Math.max(0, Math.min(validCols - 1, entryCol));
+        const validExitRow = Math.max(0, Math.min(validRows - 1, exitRow));
+        const validExitCol = Math.max(0, Math.min(validCols - 1, exitCol));
+
+        // 标记入口和出口
+        grid[validEntryRow][validEntryCol].entry = true;
+        grid[validExitRow][validExitCol].exit = true;
+
+        return {
+            grid,
+            entry: { row: validEntryRow, col: validEntryCol },
+            exit: { row: validExitRow, col: validExitCol },
+            params: {
+                ...params,
+                rows: validRows,
+                cols: validCols
+            }
+        };
+    }
+}
 
 /**
  * 简单的可种子化伪随机数生成器（Mulberry32）
@@ -150,49 +226,42 @@ function carveMazeDFS(grid: Cell[][], rows: number, cols: number, rng: SeededRNG
     }
 }
 
+/** 迷宫生成器工厂 */
+export class MazeGeneratorFactory {
+    private static generators: Map<string, IMazeGenerator> = new Map([
+        ['recursive-backtracker', new RecursiveBacktrackerGenerator()]
+    ]);
+
+    /**
+     * 注册迷宫生成器
+     */
+    static register(name: string, generator: IMazeGenerator): void {
+        this.generators.set(name, generator);
+    }
+
+    /**
+     * 获取迷宫生成器
+     */
+    static get(name: string): IMazeGenerator | undefined {
+        return this.generators.get(name);
+    }
+
+    /**
+     * 获取所有可用的生成器
+     */
+    static getAll(): IMazeGenerator[] {
+        return Array.from(this.generators.values());
+    }
+}
+
 /**
- * 生成迷宫主函数
+ * 生成迷宫主函数（默认使用递归回溯算法）
  */
 export function generateMaze(params: MazeParams): Maze {
-    const { rows, cols, seed, entry, exit } = params;
-
-    // 参数验证
-    const validRows = Math.max(1, Math.min(100, rows));
-    const validCols = Math.max(1, Math.min(100, cols));
-
-    // 创建网格
-    const grid = createGrid(validRows, validCols);
-
-    // 创建随机数生成器
-    const rng = new SeededRNG(seed);
-
-    // 生成迷宫
-    carveMazeDFS(grid, validRows, validCols, rng);
-
-    // 确定入口和出口位置
-    const entryRow = entry?.gridPos?.row ?? 0;
-    const entryCol = entry?.gridPos?.col ?? 0;
-    const exitRow = exit?.gridPos?.row ?? (validRows - 1);
-    const exitCol = exit?.gridPos?.col ?? (validCols - 1);
-
-    // 验证位置范围
-    const validEntryRow = Math.max(0, Math.min(validRows - 1, entryRow));
-    const validEntryCol = Math.max(0, Math.min(validCols - 1, entryCol));
-    const validExitRow = Math.max(0, Math.min(validRows - 1, exitRow));
-    const validExitCol = Math.max(0, Math.min(validCols - 1, exitCol));
-
-    // 标记入口和出口
-    grid[validEntryRow][validEntryCol].entry = true;
-    grid[validExitRow][validExitCol].exit = true;
-
-    return {
-        grid,
-        entry: { row: validEntryRow, col: validEntryCol },
-        exit: { row: validExitRow, col: validExitCol },
-        params: {
-            ...params,
-            rows: validRows,
-            cols: validCols
-        }
-    };
+    // 使用默认算法
+    const generator = MazeGeneratorFactory.get('recursive-backtracker');
+    if (!generator) {
+        throw new Error('Default maze generator not found');
+    }
+    return generator.generate(params);
 }

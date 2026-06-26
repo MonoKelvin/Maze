@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import type { Maze, MazeParams, EntryPoint } from '@/types/maze';
 import { Cell, EntryPointType } from '@/types/maze';
-import { generateMaze } from '@/utils/mazeGenerator';
+import { generateMaze, MazeGeneratorFactory, IMazeGenerator } from '@/utils/mazeGenerator';
 import { DEFAULT_STORAGE } from '@/types/storage';
 
 export const useMazeStore = defineStore('maze', () => {
@@ -11,6 +11,7 @@ export const useMazeStore = defineStore('maze', () => {
     const seed = ref<number | undefined>(DEFAULT_STORAGE.mazeParams.seed);
     const mode = ref<string>(DEFAULT_STORAGE.mazeParams.mode);
     const previewMode = ref<'quick' | 'full'>('quick');
+    const currentAlgorithm = ref<string>('recursive-backtracker');
     const entry = ref<EntryPoint>({
         type: DEFAULT_STORAGE.mazeParams.entryType,
         gridPos: { row: 0, col: 0 },
@@ -23,6 +24,7 @@ export const useMazeStore = defineStore('maze', () => {
     });
     const grid = ref<Cell[][]>([]);
     const maze = ref<Maze | null>(null);
+    const isGenerating = ref<boolean>(false);
 
     const mazeParams = computed<MazeParams>(() => ({
         mode: mode.value as any,
@@ -35,9 +37,11 @@ export const useMazeStore = defineStore('maze', () => {
     }));
 
     const currentMaze = computed(() => maze.value);
+    const availableAlgorithms = computed<IMazeGenerator[]>(() => MazeGeneratorFactory.getAll());
 
     const doGenerateMaze = (): Maze | null => {
         try {
+            isGenerating.value = true;
             const params = mazeParams.value;
             const mazeData = generateMaze(params);
 
@@ -48,6 +52,8 @@ export const useMazeStore = defineStore('maze', () => {
         } catch (error) {
             console.error('Failed to generate maze:', error);
             return null;
+        } finally {
+            isGenerating.value = false;
         }
     };
 
@@ -96,12 +102,18 @@ export const useMazeStore = defineStore('maze', () => {
         }
     };
 
+    const updateAlgorithm = (algorithm: string) => {
+        currentAlgorithm.value = algorithm;
+        seed.value = undefined;
+    };
+
     const resetMazeParams = () => {
         rows.value = DEFAULT_STORAGE.mazeParams.rows;
         cols.value = DEFAULT_STORAGE.mazeParams.cols;
         seed.value = undefined;
         mode.value = DEFAULT_STORAGE.mazeParams.mode;
         previewMode.value = 'quick';
+        currentAlgorithm.value = 'recursive-backtracker';
         entry.value = {
             type: DEFAULT_STORAGE.mazeParams.entryType,
             gridPos: { row: 0, col: 0 },
@@ -122,12 +134,15 @@ export const useMazeStore = defineStore('maze', () => {
         seed,
         mode,
         previewMode,
+        currentAlgorithm,
         entry,
         exit: exitPoint,
         grid,
         maze,
         mazeParams,
         currentMaze,
+        isGenerating,
+        availableAlgorithms,
         generateMaze: doGenerateMaze,
         setPreviewMode,
         updateRows,
@@ -136,6 +151,7 @@ export const useMazeStore = defineStore('maze', () => {
         updateMode,
         updateEntry,
         updateExit,
+        updateAlgorithm,
         resetMazeParams
     };
 });

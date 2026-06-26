@@ -1,19 +1,14 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { useMaze } from '@/composables/useMaze';
 import { usePlayer } from '@/composables/usePlayer';
 import { useStatsStore } from '@/store/statsStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useStorageStore } from '@/store/storageStore';
-import { MovementDirection } from '@/types/player';
-import { RefreshCw, RotateCcw, Settings, ArrowLeft, ArrowRight } from 'lucide-vue-next';
-import CustomSelect from './CustomSelect.vue';
-
-const modeOptions = [
-  { value: 'square', label: '正方形' },
-  { value: 'circle', label: '圆形' },
-  { value: 'custom', label: '自定义' },
-];
+import { MazeRenderer } from '@/utils/mazeRenderer';
+import type { CellSize, Maze } from '@/types/maze';
+import type { Theme } from '@/types/theme';
+import { RefreshCw, RotateCcw, Settings } from 'lucide-vue-next';
 
 const mazeStore = useMaze();
 const playerStore = usePlayer();
@@ -21,98 +16,79 @@ const statsStore = useStatsStore();
 const settingsStore = useSettingsStore();
 const storageStore = useStorageStore();
 
-const rows = ref<number>(mazeStore.mazeParams.value.rows);
-const cols = ref<number>(mazeStore.mazeParams.value.cols);
-const seed = ref<number | undefined>(mazeStore.mazeParams.value.seed);
-const mode = ref<string>(mazeStore.mazeParams.value.mode);
-const entryType = ref<string>(mazeStore.mazeParams.value.entry.type);
-const exitType = ref<string>(mazeStore.mazeParams.value.exit.type);
-const previewMode = ref<'quick' | 'full'>(mazeStore.mazeParams.value.previewMode);
+const maze = ref<Maze | null>(null);
+const cellSize = ref<CellSize>({
+  width: 40,
+  height: 40,
+  offsetX: 0,
+  offsetY: 0
+});
 
-const updateMazeParams = () => {
-  mazeStore.updateRows(rows.value);
-  mazeStore.updateCols(cols.value);
-  mazeStore.updateSeed(seed.value);
-  mazeStore.updateMode(mode.value);
-  mazeStore.updateEntry({ type: entryType.value as any, gridPos: { row: 0, col: 0 }, isValid: true });
-  mazeStore.updateExit({ type: exitType.value as any, gridPos: { row: rows.value - 1, col: cols.value - 1 }, isValid: true });
+const showPreviewHint = ref<boolean>(true);
+
+const currentTheme = computed<Theme>(() => {
+  return settingsStore.themes[settingsStore.currentTheme];
+});
+
+const renderMaze = () => {
+  if (!maze.value) {
+    return;
+  }
+
+  const canvas = document.querySelector('canvas');
+  if (!canvas) {
+    return;
+  }
+
+  const renderer = new MazeRenderer();
+  renderer.updateTheme(currentTheme.value);
+  renderer.render(
+    canvas as HTMLCanvasElement,
+    maze.value,
+    cellSize.value,
+    currentTheme.value
+  );
+
+  // 渲染玩家
+  if (playerStore.playerPos.value.x !== undefined && playerStore.playerPos.value.y !== undefined) {
+    renderer.renderPlayer(
+      canvas.getContext('2d')!,
+      playerStore.playerPos.value.x,
+      playerStore.playerPos.value.y,
+      cellSize.value,
+      currentTheme.value
+    );
+  }
 };
 
-const regenerateMaze = () => {
-  updateMazeParams();
+const handleGenerate = () => {
   const mazeData = mazeStore.generateMaze();
-
   if (mazeData) {
+    maze.value = mazeData;
     playerStore.resetPlayer();
     playerStore.setPosition(mazeData.entry.row, mazeData.entry.col);
     statsStore.resetStats();
     statsStore.startTimer();
-    storageStore.saveToStorage();
+    showPreviewHint.value = true;
   }
 };
 
-const generateMaze = () => {
-  regenerateMaze();
+const handleReset = () => {
+  handleGenerate();
 };
 
-const resetGame = () => {
-  regenerateMaze();
-};
-
-const resetSettings = () => {
+const handleSettings = () => {
   settingsStore.resetSettings();
-  nextTick(() => {
-    rows.value = mazeStore.mazeParams.value.rows;
-    cols.value = mazeStore.mazeParams.value.cols;
-    seed.value = mazeStore.mazeParams.value.seed;
-    mode.value = mazeStore.mazeParams.value.mode;
-    entryType.value = mazeStore.mazeParams.value.entry.type;
-    exitType.value = mazeStore.mazeParams.value.exit.type;
-    regenerateMaze();
-  });
+  const mazeData = mazeStore.generateMaze();
+  if (mazeData) {
+    maze.value = mazeData;
+    playerStore.resetPlayer();
+    playerStore.setPosition(mazeData.entry.row, mazeData.entry.col);
+    statsStore.resetStats();
+    statsStore.startTimer();
+  }
   storageStore.saveToStorage();
 };
-
-const togglePreviewMode = () => {
-  const newMode = previewMode.value === 'quick' ? 'full' : 'quick';
-  previewMode.value = newMode;
-  mazeStore.setPreviewMode(newMode);
-};
-
-const handleKeyDown = (event: KeyboardEvent) => {
-  const directionMap: Record<string, MovementDirection> = {
-    ArrowUp: MovementDirection.UP,
-    ArrowDown: MovementDirection.DOWN,
-    ArrowLeft: MovementDirection.LEFT,
-    ArrowRight: MovementDirection.RIGHT
-  };
-
-  const direction = directionMap[event.key];
-  if (direction) {
-    event.preventDefault();
-    playerStore.movePlayer(direction);
-  }
-};
-
-watch([rows, cols, mode, entryType, exitType], () => {
-  regenerateMaze();
-});
-
-watch(seed, (newSeed) => {
-  if (newSeed !== undefined) {
-    regenerateMaze();
-  }
-});
-
-onMounted(() => {
-  window.addEventListener('keydown', handleKeyDown);
-  regenerateMaze();
-});
-
-onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeyDown);
-});
-
 </script>
 
 <template>
@@ -123,7 +99,33 @@ onUnmounted(() => {
         <span class="section-title">状态</span>
       </div>
       <div class="status-wrapper">
-        <StatusDisplay />
+        <div class="stat-item">
+          <div class="stat-icon">
+            <Settings :size="16" />
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">用时</span>
+            <span class="stat-value">{{ statsStore.formatTime(statsStore.elapsedTime) }}</span>
+          </div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-icon">
+            <RefreshCw :size="16" />
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">步数</span>
+            <span class="stat-value">{{ statsStore.stepCount }}</span>
+          </div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-icon">
+            <Settings :size="16" />
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">总距离</span>
+            <span class="stat-value">{{ statsStore.formatDistance(statsStore.totalDistance) }}</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -135,84 +137,35 @@ onUnmounted(() => {
 
       <div class="settings-content">
         <div class="setting-row">
-          <label class="setting-label">模式</label>
-          <div class="setting-control">
-            <CustomSelect v-model="mode" :options="modeOptions" />
-          </div>
-        </div>
-
-        <div class="setting-row">
-          <label class="setting-label">行数</label>
+          <label class="setting-label">迷宫大小</label>
           <div class="setting-control">
             <div class="slider-wrapper">
               <input
-                v-model.number="rows"
                 type="range"
                 min="5"
                 max="50"
                 step="1"
                 class="setting-slider"
+                @input="mazeStore.updateRows(mazeStore.rows)"
               />
-              <span class="slider-value">{{ rows }}</span>
+              <span class="slider-value">{{ mazeStore.rows }} × {{ mazeStore.cols }}</span>
             </div>
           </div>
         </div>
 
         <div class="setting-row">
-          <label class="setting-label">列数</label>
+          <label class="setting-label">速度</label>
           <div class="setting-control">
             <div class="slider-wrapper">
               <input
-                v-model.number="cols"
                 type="range"
-                min="5"
-                max="50"
-                step="1"
+                min="1"
+                max="10"
+                step="0.5"
                 class="setting-slider"
+                @input="playerStore.updateSpeed(playerStore.speed)"
               />
-              <span class="slider-value">{{ cols }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="setting-row">
-          <label class="setting-label">种子</label>
-          <div class="setting-control">
-            <div class="number-input-wrapper">
-              <input
-                v-model.number="seed"
-                type="number"
-                placeholder="随机"
-                class="setting-input"
-              />
-              <div class="number-arrows">
-                <button class="arrow-up" @click.stop="seed = (seed || 0) + 1">▲</button>
-                <button class="arrow-down" @click.stop="seed = Math.max(0, (seed || 0) - 1)">▼</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="setting-row">
-          <label class="setting-label">出入口</label>
-          <div class="setting-control">
-            <div class="entry-exit-group">
-              <button
-                class="type-toggle"
-                :class="{ active: entryType === 'boundary' }"
-                @click="entryType = 'boundary'"
-              >
-                <ArrowLeft :size="14" />
-                <span>入口</span>
-              </button>
-              <button
-                class="type-toggle"
-                :class="{ active: exitType === 'boundary' }"
-                @click="exitType = 'boundary'"
-              >
-                <span>出口</span>
-                <ArrowRight :size="14" />
-              </button>
+              <span class="slider-value">{{ playerStore.speed }}</span>
             </div>
           </div>
         </div>
@@ -220,35 +173,44 @@ onUnmounted(() => {
         <div class="setting-row">
           <label class="setting-label">预览模式</label>
           <div class="setting-control">
-            <button
-              class="mode-toggle"
-              :class="{ active: previewMode === 'full' }"
-              @click="togglePreviewMode"
-            >
-              {{ previewMode === 'quick' ? '快速' : '完整' }}
-            </button>
+            <div class="mode-toggle-group">
+              <button
+                class="mode-toggle"
+                :class="{ active: mazeStore.previewMode === 'quick' }"
+                @click="mazeStore.setPreviewMode('quick')"
+              >
+                快速预览
+              </button>
+              <button
+                class="mode-toggle"
+                :class="{ active: mazeStore.previewMode === 'full' }"
+                @click="mazeStore.setPreviewMode('full')"
+              >
+                完整生成
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
     <div class="panel-section actions-section">
-      <button class="action-btn primary" @click="generateMaze">
+      <button class="action-btn primary" @click="handleGenerate">
         <RefreshCw :size="16" />
         <span>重新生成</span>
       </button>
-      <button class="action-btn secondary" @click="resetGame">
+      <button class="action-btn secondary" @click="handleReset">
         <RotateCcw :size="16" />
         <span>重置游戏</span>
       </button>
-      <button class="action-btn secondary" @click="resetSettings">
+      <button class="action-btn secondary" @click="handleSettings">
         <Settings :size="16" />
         <span>重置设置</span>
       </button>
     </div>
 
-    <div class="hint-bar">
-      <span class="hint-text">按方向键移动角色</span>
+    <div v-if="showPreviewHint && mazeStore.previewMode === 'quick'" class="hint-bar">
+      <span class="hint-text">参数调整时显示快速预览 | 完整模式生成完整迷宫</span>
     </div>
   </div>
 </template>
@@ -318,6 +280,50 @@ onUnmounted(() => {
   gap: var(--space-3);
 }
 
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.stat-item:last-child {
+  border-bottom: none;
+}
+
+.stat-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.stat-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--theme-secondary-text);
+  letter-spacing: 0.3px;
+}
+
+.stat-value {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--theme-primary-text);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
 .settings-content {
   display: flex;
   flex-direction: column;
@@ -336,133 +342,13 @@ onUnmounted(() => {
   font-weight: var(--font-weight-medium);
   color: var(--theme-secondary-text);
   letter-spacing: 0.3px;
-  min-width: 60px;
+  min-width: 70px;
   flex-shrink: 0;
 }
 
 .setting-control {
   flex: 1;
   min-width: 0;
-}
-
-.select-wrapper {
-  position: relative;
-  display: inline-flex;
-  width: 100%;
-}
-
-.setting-select {
-  width: 100%;
-  height: 32px;
-  padding: 0 var(--space-3);
-  padding-right: 36px;
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-sm);
-  color: var(--theme-primary-text);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  appearance: none;
-}
-
-.setting-select:hover {
-  border-color: var(--theme-accent-color);
-}
-
-.setting-select:focus {
-  outline: none;
-  border-color: var(--theme-accent-color);
-  box-shadow: 0 0 0 2px var(--theme-accent-light);
-}
-
-.select-arrow {
-  position: absolute;
-  right: var(--space-2);
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 10px;
-  color: var(--theme-secondary-text);
-  pointer-events: none;
-}
-
-.number-input-wrapper {
-  position: relative;
-  display: inline-flex;
-  width: 100%;
-}
-
-.setting-input {
-  width: 100%;
-  height: 32px;
-  padding: 0 var(--space-3);
-  padding-right: 32px;
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-sm);
-  color: var(--theme-primary-text);
-  transition: all var(--transition-fast);
-  -moz-appearance: textfield;
-}
-
-.setting-input::-webkit-outer-spin-button,
-.setting-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-.setting-input:hover {
-  border-color: var(--theme-accent-color);
-}
-
-.setting-input:focus {
-  outline: none;
-  border-color: var(--theme-accent-color);
-  box-shadow: 0 0 0 2px var(--theme-accent-light);
-}
-
-.setting-input::placeholder {
-  color: var(--theme-secondary-text);
-  opacity: 0.5;
-}
-
-.number-arrows {
-  position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  display: flex;
-  flex-direction: column;
-  width: 28px;
-  border-left: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-}
-
-.number-arrows button {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: 8px;
-  color: var(--theme-secondary-text);
-  transition: all var(--transition-fast);
-}
-
-.number-arrows button:hover {
-  background: rgba(0, 0, 0, 0.04);
-  color: var(--theme-accent-color);
-}
-
-.number-arrows .arrow-up {
-  border-radius: 0 var(--radius-sm) 0 0;
-}
-
-.number-arrows .arrow-down {
-  border-radius: 0 0 var(--radius-sm) 0;
 }
 
 .slider-wrapper {
@@ -510,47 +396,21 @@ onUnmounted(() => {
   font-weight: var(--font-weight-semibold);
   color: var(--theme-primary-text);
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
-  min-width: 28px;
+  min-width: 50px;
   text-align: right;
 }
 
-.entry-exit-group {
+.mode-toggle-group {
   display: flex;
   gap: var(--space-2);
 }
 
-.type-toggle {
+.mode-toggle {
   flex: 1;
   height: 32px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-1);
-  padding: 0 var(--space-3);
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
-  color: var(--theme-secondary-text);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.type-toggle:hover {
-  border-color: var(--theme-accent-color);
-  background: rgba(255, 255, 255, 0.8);
-}
-
-.type-toggle.active {
-  background: var(--theme-accent-color);
-  border-color: var(--theme-accent-color);
-  color: white;
-}
-
-.mode-toggle {
-  height: 32px;
-  padding: 0 var(--space-4);
   background: rgba(255, 255, 255, 0.6);
   border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: var(--radius-sm);
@@ -563,6 +423,7 @@ onUnmounted(() => {
 
 .mode-toggle:hover {
   border-color: var(--theme-accent-color);
+  background: rgba(255, 255, 255, 0.8);
 }
 
 .mode-toggle.active {
