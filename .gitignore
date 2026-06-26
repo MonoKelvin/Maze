@@ -145,6 +145,37 @@ vite.config.ts.timestamp-*
 # Electron build output
 dist-electron/
 
+# Vite build output
+dist/
+
+# npm lock file
+package-lock.json
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# VS Code
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Local configuration
+*.local
+
+# Backup and temp files
+*.bak
+*.tmp
+*.swp
+*.swo
+
 # Claude Code
 .claude/settings.local.json
 .claude/memory/
