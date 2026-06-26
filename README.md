@@ -1,118 +1,135 @@
-# Maze — 桌面迷宫游戏
-
 <div align="center">
 
-**一个漂亮、流畅的桌面迷宫游戏，用键盘在迷宫中穿梭，抵达出口即胜利。**
+# 🧩 Maze
+
+**✦ 桌面迷宫游戏 · 简约 · 流畅 · 高级 ✦**
+
+[![GitHub release](https://img.shields.io/badge/版本-v1.1.0-60A5FA?style=flat-square)](https://github.com/MonoKelvin/Maze)
+[![License](https://img.shields.io/badge/许可-MIT-22C55E?style=flat-square)](https://github.com/MonoKelvin/Maze)
+[![Electron](https://img.shields.io/badge/Electron-30-47848F?style=flat-square&logo=electron&logoColor=white)](https://www.electronjs.org/)
+[![Vue](https://img.shields.io/badge/Vue_3-4FC08D?style=flat-square&logo=vuedotjs&logoColor=white)](https://vuejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-6-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/)
 
 </div>
 
 ---
 
-## 这是什么？
+> 🎯 **用键盘在迷宫中穿梭，从入口走到出口即是胜利。** 每次打开都是全新的迷宫。
 
-Maze 是一个安装在电脑上的桌面迷宫游戏。每次打开都会生成一个全新的迷宫，你可以用键盘的方向键或 WASD 控制角色移动，从左侧入口走到右侧出口就算通关。游戏会统计你的用时和步数。
+## 📖 这是什么？
 
-支持 1×1 到 200×200 的迷宫尺寸、4 种主题配色、BFS 最短路径提示、鼠标滚轮缩放和拖拽平移，整体界面简约干净。
+Maze 是一个安装在电脑上的**桌面迷宫游戏**。它每次生成一个独一无二的完美迷宫（保证有解），你使用键盘的 **方向键** 或 **W/A/S/D** 控制角色，从左侧绿色入口走到右侧红色出口。
 
-## 快速上手
+🧭 迷路了吗？可以一键显示**最短路径**。🖱 鼠标滚轮缩放、拖拽平移，从任意角度观察迷宫。
 
-1. **安装**：确保电脑有 Node.js 16+，然后在项目目录执行 `npm install`
-2. **启动**：执行 `npm run dev`，浏览器会自动打开游戏页面
-3. **开始玩**：按方向键或 W/A/S/D 控制角色移动，到达绿色出口即胜利
-4. **缩放/平移**：鼠标滚轮缩放，按住拖拽平移
-5. **提示路径**：右侧面板点击「显示路径」可查看最短路线
+| 支持 | 说明 |
+|------|------|
+| 📐 尺寸 | 1×1 ~ 200×200，任意调节 |
+| 🎨 主题 | 深色、暖色、海洋、森林、紫色 |
+| ⚡ 性能 | 大迷宫毫秒生成，60fps 动画 |
+| 💾 记忆 | 自动保存窗口位置和大小 |
 
-### 打包桌面应用
+## 🚀 快速上手
 
 ```bash
-npm run build       # 构建前端
-npm run electron:dev  # 以桌面窗口运行
-npm run package     # 打包为安装程序（Windows NSIS）
+# 1. 安装依赖
+npm install
+
+# 2. 启动玩耍 (:
+npm run dev
+
+# 3. 打包桌面应用
+npm run build
+npm run electron:dev     # 桌面窗口运行
+npm run package          # 打包安装程序
 ```
 
-## 操作一览
+## 🎮 怎么玩
 
 | 操作 | 按键 |
+|------|:----:|
+| ⬆️ 上 / ⬇️ 下 / ⬅️ 左 / ➡️ 右 | `↑↓←→` 或 `W A S D` |
+| 🔍 缩放 | 鼠标滚轮 |
+| ✋ 平移 | 按住鼠标拖拽 |
+| 👁 最短路径 | 右侧面板「显示路径」 |
+| 🔄 新迷宫 | 右侧面板「重新生成」 |
+
+> 💡 **小提示**：按住方向键可以连续移动，中途换向会立刻响应。到达出口会自动弹出胜利弹窗 🎉
+
+## 🎛 右侧面板
+
+| 区域 | 功能 |
 |------|------|
-| 上/下/左/右 | ↑↓←→ 或 W/S/A/D |
-| 滚轮缩放 | 鼠标滚轮 |
-| 拖拽平移 | 按住鼠标拖动 |
-| 显示路径 | 右侧面板「显示路径」按钮 |
-| 重新生成 | 右侧面板「重新生成」按钮 |
-| 重置位置 | 右侧面板「重置位置」按钮 |
-
-## 右侧面板说明
-
-- **状态**：显示当前用时和步数
-- **尺寸**：调整迷宫的行数和列数（1~200），点击数字可直接输入
-- **操作**：重新生成迷宫、重置玩家位置、显示 BFS 最短路径
-- **主题**：切换 5 种配色（深色、暖色、海洋、森林、紫色）
+| ⏱ **状态** | 实时显示用时和步数 |
+| 📏 **尺寸** | 调整行/列数（1~200），**点击数字直接输入** |
+| 🔧 **操作** | 重新生成、重置位置、显示/隐藏路径 |
+| 🎨 **主题** | 5 种配色一键切换 |
 
 ---
 
-## 给开发者的说明
+## 🛠 给开发者的
 
-### 技术栈
+### 📦 技术栈
 
-| 层 | 技术 |
-|---|---|
-| 桌面框架 | Electron 30 |
-| 前端 | Vue 3 + TypeScript（严格模式） |
-| 构建 | Vite 6 |
-| 状态管理 | Pinia 2 |
-| 图标 | Lucide Vue |
-| 渲染 | Canvas 2D API |
+```
+Electron  ───  桌面窗口 & IPC
+    │
+Vue 3 + TS  ──  界面 & 类型安全
+    │
+ Pinia 2    ──  状态管理
+    │
+Canvas 2D  ──  迷宫渲染 (60fps)
+    │
+Lucide Vue ──  图标
+```
 
-### 项目结构
+### 🗂 项目结构
 
 ```
 Maze/
-├── electron/          # Electron 主进程（窗口管理、IPC）
+├── electron/           # 主进程（窗口、IPC）
 ├── src/
-│   ├── views/         # 页面（GameView — 核心游戏视图）
-│   ├── components/    # UI 组件
-│   ├── store/         # Pinia 状态
-│   ├── utils/         # 迷宫生成、渲染、碰撞检测、BFS 求解
-│   ├── types/         # TypeScript 类型
-│   └── constants/     # 主题配置、常量
-├── doc/               # 文档
-└── tests/             # 测试
+│   ├── views/          # 📄 GameView — 核心游戏视图
+│   ├── components/     # 🧩 WindowTitleBar / ThemeSwitcher / VictoryModal …
+│   ├── store/          # 📊 Pinia 状态
+│   ├── utils/          # ⚙️ 生成 / 渲染 / 碰撞 / 求解
+│   ├── types/          # 📝 TypeScript 类型
+│   └── constants/      # 🎨 主题 & 配置
+├── doc/                # 📚 文档
+└── tests/              # ✅ 测试
 ```
 
-### 关键设计
+### ⚡ 关键设计
 
-- **迷宫数据**：使用 `Uint8Array` 位掩码存储墙壁（不创建 Cell 对象），支持 200×200 迷宫毫秒级生成
-- **迷宫生成**：递归回溯算法（迭代 + 栈），大迷宫用 `setTimeout` 分片异步生成，带进度回调和取消支持
-- **渲染**：Canvas 2D 的 `fillRect` 逐墙绘制，无阴影无转角重叠
-- **碰撞检测**：直接读取位掩码，O(1) 判断
-- **路径求解**：BFS 广度优先搜索，返回最短路径坐标
-- **主题系统**：CSS 变量动态切换，所有组件响应式更新
+- **🏗 迷宫** — `Uint8Array` 位掩码，不创建 Cell 对象，200×200 毫秒级生成
+- **🌀 算法** — 递归回溯（迭代 + 栈），大迷宫异步分片，支持取消
+- **🖌 渲染** — `fillRect` 逐墙绘制，无阴影无转角重叠
+- **🧨 碰撞** — 读位掩码 O(1) 判断
+- **🗺 求解** — BFS 最短路径
+- **🎨 主题** — CSS 变量动态切换，全组件响应
 
-### 常用命令
+### 🔧 常用命令
 
 ```bash
-npm run dev              # 启动开发服务器
-npm run type-check       # TypeScript 类型检查
+npm run dev              # 启动开发
+npm run type-check       # TS 类型检查
 npm run test:unit        # 单元测试
-npm run lint             # ESLint 检查
-npm run format           # Prettier 格式化
-npm run package          # 打包桌面安装程序
+npm run lint             # ESLint
+npm run format           # Prettier
+npm run package          # 打包安装程序
 ```
-
----
-
-## 许可证
-
-MIT License
-
-## 作者
-
-MonoKelvin
 
 ---
 
 <div align="center">
 
-**Made with ❤️**
+## 📄 MIT License
+
+**MonoKelvin** · [GitHub](https://github.com/MonoKelvin/Maze)
+
+───
+
+(｡◕‿◕｡) **Made with love and TypeScript** ✨
 
 </div>
