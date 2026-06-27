@@ -154,7 +154,12 @@ function createWindow() {
   });
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  // 设置默认语言为中文（使用系统 locale）
+  app.commandLine.appendSwitch('lang', 'zh-CN');
+
+  createWindow();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();

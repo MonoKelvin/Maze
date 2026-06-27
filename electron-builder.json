@@ -8,6 +8,8 @@
   "files": [
     "!node_modules/**/*",
     "!release/**/*",
+    "!node_modules/electron/dist/locales/**/*",
+    "!node_modules/electron/dist/resources.pak",
     "node_modules/ajv/**/*",
     "node_modules/ajv-formats/**/*",
     "node_modules/json-schema-traverse/**/*",
@@ -19,7 +21,8 @@
   ],
   "extraResources": [
     { "from": "src/assets/app/logo.png", "to": "icon.png" },
-    { "from": "LICENSE", "to": "LICENSE" }
+    { "from": "LICENSE", "to": "LICENSE" },
+    { "from": "uninstall.js", "to": "uninstall.js" }
   ],
   "win": {
     "target": [
@@ -52,6 +55,9 @@
     "oneClick": false,
     "perMachine": false,
     "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "deleteAppDataOnUninstall": true,
     "artifactName": "maze-setup-${version}.${ext}",
     "installerIcon": "src/assets/app/logo.ico",
     "uninstallerIcon": "src/assets/app/logo.ico",
