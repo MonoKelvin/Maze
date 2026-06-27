@@ -2,13 +2,12 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { Direction } from '@/types/maze';
 
-export type PlayerShape = 'circle' | 'square' | 'diamond' | 'star' | 'heart';
+export type PlayerShape = 'circle' | 'square' | 'diamond' | 'heart';
 
 export const PLAYER_SHAPES: { key: PlayerShape; label: string }[] = [
   { key: 'circle', label: '圆形' },
   { key: 'square', label: '方形' },
   { key: 'diamond', label: '菱形' },
-  { key: 'star', label: '星形' },
   { key: 'heart', label: '爱心' },
 ];
 

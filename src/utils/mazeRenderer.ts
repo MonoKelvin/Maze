@@ -237,19 +237,6 @@ export class MazeRenderer {
         ctx.closePath();
         break;
 
-      case 'star': {
-        const inner = r * 0.45;
-        for (let i = 0; i < 10; i++) {
-          const radius = i % 2 === 0 ? r : inner;
-          const angle = (Math.PI / 2) + (i * Math.PI / 5);
-          const px = x - radius * Math.cos(angle);
-          const py = y - radius * Math.sin(angle);
-          i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
-        }
-        ctx.closePath();
-        break;
-      }
-
       case 'heart': {
         const topY = y - r * 0.4;
         ctx.moveTo(x, y + r);

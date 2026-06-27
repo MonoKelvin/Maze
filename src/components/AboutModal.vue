@@ -47,7 +47,9 @@ onMounted(() => loadVersion());
     <div class="amo-card" @click.stop>
       <button class="amo-close" @click="emit('close')"><X :size="16" /></button>
 
-      <div class="amo-logo"><span class="amo-m">M</span></div>
+      <div class="amo-logo">
+        <img src="@/assets/app/logo.png" alt="Maze" class="amo-logo-img" />
+      </div>
 
       <div class="amo-meta">
         <h2 class="amo-name">{{ APP_NAME }}</h2>
@@ -122,11 +124,11 @@ onMounted(() => loadVersion());
 
 .amo-logo {
   width:64px; height:64px; border-radius:16px;
-  background:var(--accent);
   display:flex; align-items:center; justify-content:center;
-  box-shadow:0 8px 24px var(--accent-soft);
+  overflow:hidden;
+  box-shadow:0 8px 24px rgba(0,0,0,0.15);
 }
-.amo-m { font-size:28px; font-weight:800; color:#fff; letter-spacing:-1px; line-height:1; }
+.amo-logo-img { width:100%; height:100%; object-fit:contain; }
 
 .amo-meta {
   display: flex; align-items: center; width: 100%; justify-content: center;

@@ -12,6 +12,16 @@ export default defineConfig(({ mode }) => {
       electron({
         main: {
           entry: 'electron/main.ts',
+          vite: {
+            build: {
+              rollupOptions: {
+                external: (id: string) => {
+                  if (id === 'electron' || id.startsWith('node:')) return true;
+                  return false; // bundle everything else
+                },
+              },
+            },
+          },
         },
         preload: {
           input: 'electron/preload.ts',

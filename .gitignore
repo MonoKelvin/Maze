@@ -148,6 +148,9 @@ dist-electron/
 # Vite build output
 dist/
 
+# Electron-builder output
+release/
+
 # npm lock file
 package-lock.json
 

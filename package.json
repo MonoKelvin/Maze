@@ -1,7 +1,7 @@
 {
   "name": "maze",
   "version": "1.1.0",
-  "description": "一个基于 Electron + Vue 3 + TypeScript 构建的极简、高级的桌面迷宫应用",
+  "description": "一个可用于随机生成迷宫的游戏软件",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",

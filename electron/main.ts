@@ -5,9 +5,9 @@ import { ipcMain } from 'electron';
 function getIconPath() {
   try {
     const iconPaths = {
-      win32: path.join(__dirname, '../src/assets/icon.png'),
-      darwin: path.join(__dirname, '../src/assets/icon.png'),
-      linux: path.join(__dirname, '../src/assets/icon.png')
+      win32: path.join(__dirname, '../src/assets/app/logo.png'),
+      darwin: path.join(__dirname, '../src/assets/app/logo.png'),
+      linux: path.join(__dirname, '../src/assets/app/logo.png')
     };
     return iconPaths[process.platform];
   } catch {

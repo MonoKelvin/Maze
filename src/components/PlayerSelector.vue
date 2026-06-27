@@ -3,7 +3,7 @@ import { ref, computed } from 'vue';
 import { usePlayerStore, PLAYER_SHAPES, PLAYER_ICONS } from '@/store/playerStore';
 import type { PlayerShape } from '@/store/playerStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import { Upload, X, Circle, Square, Diamond, Star, Heart } from 'lucide-vue-next';
+import { Upload, X, Circle, Square, Diamond, Heart } from 'lucide-vue-next';
 import NumberInput from './NumberInput.vue';
 
 const player = usePlayerStore();
@@ -11,7 +11,7 @@ const settings = useSettingsStore();
 const fileInput = ref<HTMLInputElement>();
 
 const shapeIcons: Record<PlayerShape, any> = {
-  circle: Circle, square: Square, diamond: Diamond, star: Star, heart: Heart,
+  circle: Circle, square: Square, diamond: Diamond, heart: Heart,
 };
 
 function pickShape(s: PlayerShape) { player.setShape(s); }

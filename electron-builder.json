@@ -2,12 +2,24 @@
   "appId": "com.maze.app",
   "productName": "Maze",
   "directories": {
-    "output": "dist",
+    "output": "release",
     "buildResources": "src/assets"
   },
   "files": [
+    "!node_modules/**/*",
+    "!release/**/*",
+    "node_modules/ajv/**/*",
+    "node_modules/ajv-formats/**/*",
+    "node_modules/json-schema-traverse/**/*",
+    "node_modules/fast-deep-equal/**/*",
+    "node_modules/fast-uri/**/*",
+    "node_modules/require-from-string/**/*",
     "dist/**/*",
-    "node_modules/**/*"
+    "dist-electron/**/*"
+  ],
+  "extraResources": [
+    { "from": "src/assets/app/logo.png", "to": "icon.png" },
+    { "from": "LICENSE", "to": "LICENSE" }
   ],
   "win": {
     "target": [
@@ -16,7 +28,7 @@
         "arch": ["x64"]
       }
     ],
-    "icon": "src/assets/app/logo.png"
+    "icon": "src/assets/app/logo.ico"
   },
   "mac": {
     "target": [
@@ -35,5 +47,14 @@
       }
     ],
     "icon": "src/assets/app/logo.png"
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": true,
+    "artifactName": "maze-setup-${version}.${ext}",
+    "installerIcon": "src/assets/app/logo.ico",
+    "uninstallerIcon": "src/assets/app/logo.ico",
+    "installerHeaderIcon": "src/assets/app/logo.ico"
   }
 }
