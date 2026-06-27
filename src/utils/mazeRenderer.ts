@@ -1,5 +1,5 @@
 /**
- * 迷宫渲染器 — 使用 fillRect 绘制墙壁（无阴影、无重叠转角）
+ * 迷宫渲染器 — 合并连续墙段 + roundRect + lineCap/lineJoin 圆角
  */
 
 import type { Theme } from '@/types/theme';
@@ -12,26 +12,108 @@ export class MazeRenderer {
     return { cs, ox: Math.floor((cw - C * cs) / 2), oy: Math.floor((ch - R * cs) / 2) };
   }
 
-  /** 绘制墙壁 — fillRect 方式，无阴影无转角重叠 */
+  /**
+   * 绘制墙壁
+   *
+   * 策略：
+   *   水平墙和竖墙分别扫描合并，每条连续墙段只画一条线段。
+   *   lineCap:'round' → 端点半圆
+   *   lineJoin:'round' → 转角处圆弧
+   *
+   * 端点（墙的尽头）：半圆帽盖
+   * 转角（水平 + 竖墙交汇）：两条线的半圆重叠，视觉上自然形成圆角
+   */
   static renderWalls(
     ctx: CanvasRenderingContext2D,
     walls: Uint8Array, R: number, C: number,
     cs: number, ox: number, oy: number,
     theme: Theme
   ) {
-    const lw = Math.max(1, Math.ceil(cs / 20));
-    ctx.fillStyle = theme.wallColor;
+    const lw = Math.max(2, Math.ceil(cs / 20));
 
-    // 用 fillRect 绘制每条墙壁，转角自然衔接
-    for (let r = 0; r < R; r++) {
-      for (let c = 0; c < C; c++) {
-        const w = walls[r * C + c];
-        if (w & W_TOP)    ctx.fillRect(ox + c * cs, oy + r * cs, cs, lw);
-        if (w & W_BOTTOM) ctx.fillRect(ox + c * cs, oy + (r + 1) * cs - lw, cs, lw);
-        if (w & W_LEFT)   ctx.fillRect(ox + c * cs, oy + r * cs, lw, cs);
-        if (w & W_RIGHT)  ctx.fillRect(ox + (c + 1) * cs - lw, oy + r * cs, lw, cs);
+    ctx.strokeStyle = theme.wallColor;
+    ctx.lineWidth = lw;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+
+    // ── 水平墙段：每行扫描，合并连续的上墙或下墙 ──
+    for (let row = 0; row < R; row++) {
+      // 上墙（W_TOP）
+      let segStart = -1;
+      for (let col = 0; col < C; col++) {
+        if (walls[row * C + col] & W_TOP) {
+          if (segStart < 0) segStart = col;
+        } else {
+          if (segStart >= 0) {
+            ctx.moveTo(ox + segStart * cs, oy + row * cs);
+            ctx.lineTo(ox + col * cs, oy + row * cs);
+            segStart = -1;
+          }
+        }
+      }
+      if (segStart >= 0) {
+        ctx.moveTo(ox + segStart * cs, oy + row * cs);
+        ctx.lineTo(ox + C * cs, oy + row * cs);
+      }
+      // 下墙（W_BOTTOM）
+      segStart = -1;
+      for (let col = 0; col < C; col++) {
+        if (walls[row * C + col] & W_BOTTOM) {
+          if (segStart < 0) segStart = col;
+        } else {
+          if (segStart >= 0) {
+            ctx.moveTo(ox + segStart * cs, oy + (row + 1) * cs);
+            ctx.lineTo(ox + col * cs, oy + (row + 1) * cs);
+            segStart = -1;
+          }
+        }
+      }
+      if (segStart >= 0) {
+        ctx.moveTo(ox + segStart * cs, oy + (row + 1) * cs);
+        ctx.lineTo(ox + C * cs, oy + (row + 1) * cs);
       }
     }
+
+    // ── 竖直墙段：每列扫描，合并连续的左墙或右墙 ──
+    for (let col = 0; col < C; col++) {
+      // 左墙（W_LEFT）
+      let segStart = -1;
+      for (let row = 0; row < R; row++) {
+        if (walls[row * C + col] & W_LEFT) {
+          if (segStart < 0) segStart = row;
+        } else {
+          if (segStart >= 0) {
+            ctx.moveTo(ox + col * cs, oy + segStart * cs);
+            ctx.lineTo(ox + col * cs, oy + row * cs);
+            segStart = -1;
+          }
+        }
+      }
+      if (segStart >= 0) {
+        ctx.moveTo(ox + col * cs, oy + segStart * cs);
+        ctx.lineTo(ox + col * cs, oy + R * cs);
+      }
+      // 右墙（W_RIGHT）
+      segStart = -1;
+      for (let row = 0; row < R; row++) {
+        if (walls[row * C + col] & W_RIGHT) {
+          if (segStart < 0) segStart = row;
+        } else {
+          if (segStart >= 0) {
+            ctx.moveTo(ox + (col + 1) * cs, oy + segStart * cs);
+            ctx.lineTo(ox + (col + 1) * cs, oy + row * cs);
+            segStart = -1;
+          }
+        }
+      }
+      if (segStart >= 0) {
+        ctx.moveTo(ox + (col + 1) * cs, oy + segStart * cs);
+        ctx.lineTo(ox + (col + 1) * cs, oy + R * cs);
+      }
+    }
+
+    ctx.stroke();
   }
 
   /** 绘制求解路径 */
