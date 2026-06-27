@@ -5,9 +5,10 @@
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc && vite build",
+    "build": "vite build",
+    "package": "vite build && electron-builder --publish never",
     "preview": "vite preview",
-    "package": "electron-builder",
+    "package:dev": "vite build && electron-builder --publish never",
     "test:unit": "vitest",
     "test:e2e": "playwright test",
     "type-check": "vue-tsc --noEmit",
@@ -48,50 +49,15 @@
     "vitest": "^2.0.0",
     "vue-tsc": "^2.1.0"
   },
-  "build": {
-    "appId": "com.maze.app",
-    "productName": "Maze",
-    "directories": {
-      "output": "dist",
-      "buildResources": "build"
-    },
-    "files": [
-      "dist/**/*",
-      "node_modules/**/*"
-    ],
-    "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        }
-      ],
-      "icon": "build/icon.ico"
-    },
-    "mac": {
-      "target": [
-        {
-          "target": "dmg",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
-        }
-      ],
-      "icon": "build/icon.icns"
-    },
-    "linux": {
-      "target": [
-        {
-          "target": "AppImage",
-          "arch": [
-            "x64"
-          ]
-        }
-      ],
-      "icon": "build/icon.png"
-    }
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc && vite build",
+    "package": "vite build && electron-builder --publish never",
+    "package:dev": "vite build && electron-builder --publish never",
+    "test:unit": "vitest",
+    "test:e2e": "playwright test",
+    "type-check": "vue-tsc --noEmit",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
+    "format": "prettier --write src/"
   }
 }

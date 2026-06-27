@@ -1,9 +1,23 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, shell } from 'electron';
 import path from 'path';
 import { ipcMain } from 'electron';
 
+function getIconPath() {
+  try {
+    const iconPaths = {
+      win32: path.join(__dirname, '../src/assets/icon.png'),
+      darwin: path.join(__dirname, '../src/assets/icon.png'),
+      linux: path.join(__dirname, '../src/assets/icon.png')
+    };
+    return iconPaths[process.platform];
+  } catch {
+    return undefined;
+  }
+}
+
 // 窗口状态管理
 let winState: { width?: number; height?: number; x?: number; y?: number; max?: boolean } = {};
+let mainWindow: BrowserWindow | null = null;
 
 function loadWinState() {
   try {
@@ -84,8 +98,18 @@ ipcMain.handle('notification:show', async (event, { title, body }) => {
   }
 });
 
+ipcMain.handle('shell:openExternal', async (_event, url: string) => {
+  try {
+    await shell.openExternal(url);
+  } catch (e: any) {
+    console.error('打开外部链接失败:', e);
+  }
+});
+
 function createWindow() {
   loadWinState();
+
+  const iconPath = getIconPath();
 
   const win = new BrowserWindow({
     width: winState.width || 1080,
@@ -94,6 +118,7 @@ function createWindow() {
     minHeight: 600,
     frame: false,
     transparent: false,
+    ...(iconPath ? { icon: iconPath } : {}),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -113,11 +138,20 @@ function createWindow() {
     win.loadFile(path.join(__dirname, '../dist/index.html'));
   }
 
+  // 处理浏览器中的 target="_blank" 链接
+  win.webContents.setWindowOpenHandler((details) => {
+    shell.openExternal(details.url);
+    return { action: 'deny' };
+  });
+
   win.on('resize', () => { win.webContents.send('window-resize'); });
 
   win.on('ready-to-show', () => { win.show(); });
 
-  win.on('close', () => { saveWinState(win); });
+  win.on('close', () => {
+    saveWinState(win);
+    mainWindow = null;
+  });
 }
 
 app.whenReady().then(createWindow);
@@ -127,5 +161,7 @@ app.on('window-all-closed', () => {
 });
 
 app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow();
+  }
 });
